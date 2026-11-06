@@ -21,6 +21,8 @@ PORT=3000 npm start      # PORT를 생략하면 3000번
 
 브라우저에서 `http://localhost:3000` 으로 접속합니다.
 
+> `node_modules` 폴더는 저장소에 포함되어 있지 않습니다(`.gitignore` 처리). 받은 뒤 `npm install`을 한 번 실행하면 `package.json` / `package-lock.json` 기준으로 필요한 모듈(`ws`)이 설치됩니다.
+
 ## 규칙 요약
 
 - 8종류 벌레 카드 × 8장 = 64장을 인원수대로 나눠 가집니다.
