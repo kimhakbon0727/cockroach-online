@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b3d2a">
+<title>바퀴벌레 포커</title>
+<style>
+:root{--felt:#0f5132;--felt-dark:#0a3a24;--felt-light:#17703f;--paper:#fdfbf5;--red:#c0392b;--ink:#1b1b1b;--gold:#f5c542;--muted:#a9c9b8;--danger:#e74c3c;--ok:#2ecc71;--panel:rgba(0,0,0,.28);--cw:clamp(48px,13vw,66px)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;background:radial-gradient(ellipse at 50% 30%,var(--felt-light),var(--felt) 45%,var(--felt-dark)) fixed;color:#fff;-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top,0px)}
+[hidden]{display:none!important}
+button{font:inherit;cursor:pointer;color:inherit}button:disabled{cursor:not-allowed;opacity:.4}
+input{font:inherit}
+.btn{border-radius:10px;padding:10px 16px;font-weight:700;background:#ffffff22;color:#fff;border:1px solid #ffffff33}
+.btn:hover:not(:disabled){background:#ffffff33}
+.btn.primary{background:var(--gold);color:#3b2a00;border-color:transparent}
+.btn.danger{background:var(--danger);border-color:transparent}
+.btn.small{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn.big{padding:12px 22px;font-size:17px}
+.btn.on{background:var(--gold);color:#3b2a00;border-color:transparent}
+.chip{display:inline-block;font-size:11px;padding:1px 6px;border-radius:99px;background:#ffffff2a;margin-left:4px;vertical-align:middle;font-weight:600}
+.chip.off{background:#7f8c8d}.chip.ok{background:#1e8449}.chip.gold{background:var(--gold);color:#3b2a00}
+#toast{position:fixed;left:50%;bottom:calc(120px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:#000c;color:#fff;padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:all .2s;z-index:50;max-width:90vw;text-align:center;font-size:14px}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.center-wrap{min-height:80dvh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card-panel{background:var(--panel);border:1px solid #ffffff22;border-radius:18px;padding:24px;width:min(440px,100%);backdrop-filter:blur(4px)}
+.logo{font-size:34px;font-weight:900;letter-spacing:1px;text-align:center;margin:0 0 4px}.logo span{color:var(--gold)}
+.sub{text-align:center;color:var(--muted);margin:0 0 18px;font-size:14px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.field label{font-size:13px;color:var(--muted)}
+.field input,.inp{padding:11px 12px;border-radius:10px;border:1px solid #ffffff33;background:#00000033;color:#fff;width:100%}
+.inp.code{text-transform:uppercase;letter-spacing:6px;text-align:center;font-size:20px;font-weight:800}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.err{color:#ffb3a8;font-size:13px;min-height:18px;margin-top:4px;text-align:center}
+.divider{text-align:center;color:var(--muted);font-size:12px;margin:14px 0}
+.link{background:none;border:0;color:var(--gold);text-decoration:underline;padding:6px;font-size:13px}
+.room-code{text-align:center;margin-bottom:10px}.room-code .big{font-size:42px;font-weight:900;letter-spacing:10px;color:var(--gold)}
+.members{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:6px}
+.members li{display:flex;align-items:center;gap:8px;background:#00000026;border-radius:10px;padding:8px 10px}.members .nm{flex:1;font-weight:700}
+.hint{color:var(--muted);font-size:13px;text-align:center;margin:8px 0 0}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0a3a24ee;backdrop-filter:blur(4px);flex-wrap:wrap}
+.topbar .title{font-weight:900;letter-spacing:1px}.topbar .code{color:var(--gold);font-weight:800;letter-spacing:3px}.topbar .sp{flex:1}
+/* 카드 */
+.card{width:var(--cw);height:calc(var(--cw)*1.4);background:var(--paper);color:var(--ink);border-radius:calc(var(--cw)*.12);position:relative;flex:none;user-select:none;box-shadow:0 2px 4px #0006;border:1px solid #0003;font-weight:800;padding:0;transition:transform .12s,box-shadow .12s;display:block}
+.card .c-tl{position:absolute;top:5%;left:0;right:0;text-align:center;font-size:calc(var(--cw)*.19);line-height:1.1}
+.card .c-mid{position:absolute;left:0;right:0;bottom:12%;text-align:center;font-size:calc(var(--cw)*.55);line-height:1}
+.card .bd{position:absolute;right:-6px;top:-8px;background:var(--gold);color:#3b2a00;font-size:11px;padding:1px 6px;border-radius:99px}
+.card.back{background:repeating-linear-gradient(45deg,#8e2a1f 0 6px,#a63426 6px 12px);border:2px solid #fff}
+.card.back *{display:none}
+.card.back:after{content:"🪳";position:absolute;inset:0;display:grid;place-items:center;font-size:calc(var(--cw)*.5)}
+.card.sm{--cw:clamp(34px,9vw,44px)}.card.xs{--cw:28px}
+.card.hand{cursor:pointer}.card.hand.stack{box-shadow:3px 3px 0 #fffbe8,4px 4px 0 #0005,0 2px 4px #0006}
+.card.sel{transform:translateY(-14px);box-shadow:0 6px 12px #0008;outline:3px solid var(--gold)}
+.card.dis{cursor:default}
+.card.pickable{cursor:pointer}.card.pickable:hover{transform:translateY(-3px)}
+.card.flip{animation:flip .5s}.card.big{--cw:96px}
+@keyframes flip{from{transform:rotateY(90deg)}to{transform:none}}
+.card.danger{outline:3px solid var(--danger);animation:pulse 1s infinite}.card.warn{outline:3px solid var(--gold)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+/* 테이블 */
+#app{min-height:calc(100dvh - 52px);display:flex;flex-direction:column}
+.table{flex:1;display:flex;flex-direction:column;padding:8px 10px 0;gap:8px;min-height:0}
+.opps{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.opp{background:var(--panel);border:2px solid transparent;border-radius:12px;padding:6px 10px;min-width:130px;text-align:center;font-size:13px;color:#fff}
+.opp.turn{border-color:var(--gold);box-shadow:0 0 12px #f5c54288}
+.opp.pick{border:2px dashed var(--gold);cursor:pointer;animation:pulse 1.4s infinite}
+.opp.on{background:#f5c54244;border:2px solid var(--gold)}.opp.off{opacity:.55}
+.opp-name{font-weight:800;margin-bottom:4px}
+.opp-cards{display:flex;justify-content:center;height:34px;margin-bottom:2px}
+.opp-cards .card{--cw:22px;margin-left:-12px}.opp-cards .card:first-child{margin-left:0}
+.opp-meta{color:var(--muted);font-size:12px}
+.zoo{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px;min-height:34px}
+.zoo .card{--cw:26px}.zoo .card .c-tl{display:none}.zoo .card .c-mid{bottom:20%;font-size:15px}
+.zoo .card .bd{font-size:10px;right:-5px}
+.zoo-none{color:var(--muted);font-size:12px;align-self:center}
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;min-height:240px;background:#00000022;border-radius:16px;padding:12px}
+.trail{font-size:13px;color:var(--muted);min-height:20px}
+.bubble{background:var(--paper);color:var(--ink);border-radius:16px;padding:8px 16px;font-size:18px;font-weight:800;position:relative}
+.bubble small{display:block;font-size:12px;color:#7a705a;font-weight:600}
+.turn-msg{font-weight:800;color:var(--gold);font-size:17px;max-width:520px}
+.res-ok{color:#7dffb0}.res-bad{color:#ff9f95}
+.warnbox{background:#b9770e;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:700}
+.me{background:#00000040;border-top:1px solid #ffffff22;padding:8px 10px calc(12px + env(safe-area-inset-bottom,0px));margin:0 -10px}
+.me-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;margin-bottom:4px}.me-info .grow{flex:1}
+.me .zoo{justify-content:flex-start;min-height:0;margin:0}
+.hand{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:18px 0 6px;min-height:calc(var(--cw)*1.4 + 28px)}
+.actions{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:6px}
+.actions .lab{font-size:12px;color:var(--muted)}
+.actions .line{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.picker{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:6px 0}
+.picker .card.sel{transform:translateY(-6px)}
+.picker .card .c-tl{display:none}.picker .card .c-mid{bottom:18%;font-size:24px}
+.log{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+/* 모달 */
+.overlay{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;padding:14px;z-index:40}
+.modal{background:#12392a;border:1px solid #ffffff33;border-radius:16px;padding:18px;width:min(560px,100%);max-height:92dvh;overflow:auto}
+.modal h2{margin:0 0 6px;font-size:22px}.modal h3{margin:14px 0 4px;font-size:15px;color:var(--gold)}
+.modal p,.modal li{font-size:14px;line-height:1.6;margin:3px 0}.modal ul{padding-left:18px;margin:4px 0}
+.result-head{text-align:center;margin-bottom:8px}.result-head .kind{font-size:26px;font-weight:900;color:var(--gold)}
+.res-row{background:#00000030;border-radius:10px;padding:8px 10px;margin-bottom:6px}.res-row.lose{outline:2px solid var(--danger)}
+.res-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.res-top .nm{font-weight:800;flex:1}
+.res-cards{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;min-height:10px}
+.modal-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+</style></head><body>
+<div id="home" class="center-wrap"><div class="card-panel">
+ <div class="logo">🪳 바퀴벌레 <span>포커</span></div><p class="sub">거짓말을 던지고, 거짓말을 간파하세요</p>
+ <div class="field"><label for="nm">닉네임</label><input id="nm" type="text" maxlength="10" placeholder="이름을 입력하세요"></div>
+ <button class="btn primary big" id="cr" style="width:100%">방 만들기</button>
+ <div class="divider">또는 방 코드로 입장</div>
+ <div class="row"><input class="inp code" id="cd" maxlength="4" placeholder="ABCD" aria-label="방 코드"><button class="btn" id="jn" style="flex:.6">입장</button></div>
+ <div class="err" id="err"></div><div style="text-align:center"><button class="link" data-a="rules">규칙 보기</button></div>
+</div></div>
+<div id="game" hidden>
+ <div class="topbar"><span class="title">🪳 바퀴벌레 포커</span><span class="code" id="rc"></span><span class="sp"></span><button class="btn small" data-a="rules">규칙</button><button class="btn small danger" data-a="leave">방 나가기</button></div>
+ <div id="app"></div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div><div id="mr"></div>
+<script>
+const E=["🪳","🦇","🪰","🐀","🦂","🕷️","🐸","🐛"],N=["바퀴벌레","박쥐","파리","쥐","전갈","거미","두꺼비","노린재"];
+const ct=c=>{const k=c%8;return c>=8?`이건 ${N[k]}${k==4?"이":"가"} 아니야`:`이건 ${N[k]}${k==4?"이야":"야"}`};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let ws,S,sel={neg:0},key="",rules=false,lastTop,tt,sess=JSON.parse(sessionStorage.getItem("cp")||"null");
+$("nm").value=localStorage.getItem("cpn")||"";
+{const q=new URLSearchParams(location.search).get("r");if(q)$("cd").value=q.toUpperCase().slice(0,4)}
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("show"),2600)}
+function connect(first){
+  ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host);
+  ws.onopen=()=>{if(first)first();else if(sess)send({t:"rejoin",code:sess.code,token:sess.token})};
+  ws.onmessage=e=>{const m=JSON.parse(e.data);
+    if(m.type==="joined"){sess={code:m.code,token:m.token};sessionStorage.setItem("cp",JSON.stringify(sess))}
+    if(m.type==="err"){$("err").textContent=m.msg;toast(m.msg);if(m.reset)goHome()}
+    if(m.type==="left"){goHome();ws.close()}
+    if(m.type==="state"){S=m;render()}};
+  ws.onclose=()=>{if(sess)setTimeout(()=>connect(),1500)};
+}
+function goHome(){sess=null;sessionStorage.removeItem("cp");S=null;key="";lastTop=undefined;$("mr").innerHTML="";$("game").hidden=true;$("home").hidden=false}
+const send=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
+const nm=()=>{const n=$("nm").value.trim()||"손님";localStorage.setItem("cpn",n);return n};
+$("cr").onclick=()=>{sess=null;$("err").textContent="";connect(()=>send({t:"create",name:nm()}))};
+$("jn").onclick=()=>{sess=null;$("err").textContent="";connect(()=>send({t:"join",name:nm(),code:$("cd").value.trim()}))};
+if(sess)connect();
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-a]");if(!b||b.disabled)return;
+  const a=b.dataset.a,v=b.dataset.v;
+  if(a==="rules"){rules=true;modals()}else if(a==="close"){rules=false;modals()}
+  else if(["card","target","ty","neg"].includes(a)){sel[a]=+v;render()}
+  else if(a==="resp")send({t:"respond",a:v});
+  else if(a==="offer")send({t:"offer",card:sel.card,target:sel.target,claim:sel.ty+8*sel.neg});
+  else if(a==="pass")send({t:"pass",target:sel.target,claim:sel.ty+8*sel.neg});
+  else if(a==="addBot")send({t:"addBot"});else if(a==="start")send({t:"start"});
+  else if(a==="rm")send({t:"rmBot",i:+v});
+  else if(a==="copy"){const u=location.origin+"/?r="+S.code;navigator.clipboard&&navigator.clipboard.writeText(u).then(()=>toast("초대 링크를 복사했어요"),()=>toast(u))}
+  else if(a==="leave"){if(confirm("방을 나갈까요?")){send({t:"leave"});setTimeout(()=>{if(sess){const w=ws;goHome();w&&w.close()}},1500)}}
+});
+const face=(k,cls="",extra="",tag="div")=>`<${tag} class="card ${cls}" ${extra}><span class="c-tl">${N[k]}</span><span class="c-mid">${E[k]}</span></${tag}>`;
+const zoo=(t,mini)=>{const h=t.map((n,k)=>n?`<div class="card ${n>=3?"danger":n==2?"warn":""}" title="${N[k]}"><span class="c-tl">${N[k]}</span><span class="c-mid">${E[k]}</span><b class="bd">×${n}</b></div>`:"").join("");return h?`<div class="zoo">${h}</div>`:`<div class="zoo"><span class="zoo-none">모은 벌레 없음</span></div>`};
+function claimUI(){
+  return `<div class="lab">뭐라고 말할까요?</div>
+  <div class="line"><button class="btn small ${sel.neg?"":"on"}" data-a="neg" data-v="0">이건 ○○야</button><button class="btn small ${sel.neg?"on":""}" data-a="neg" data-v="1">이건 ○○가 아니야</button></div>
+  <div class="picker">${N.map((n,i)=>face(i,"sm pickable "+(sel.ty===i?"sel":""),`data-a="ty" data-v="${i}"`,"button")).join("")}</div>`;
+}
+function modals(){
+  let h="";
+  if(rules)h+=`<div class="overlay"><div class="modal"><h2>🪳 바퀴벌레 포커 규칙</h2>
+  <h3>목표</h3><p>같은 벌레 카드를 <b>4장</b> 모으면 패배! 내 차례에 낼 카드가 없어도 패배예요.</p>
+  <h3>내 차례</h3><ul><li>손패에서 카드 한 장을 뒷면으로 골라 한 명에게 건네요.</li><li>“이건 ○○야” 또는 “이건 ○○가 아니야”라고 말해요. 거짓말도 가능!</li></ul>
+  <h3>카드를 받으면</h3><ul><li><b>맞아</b>: 말이 사실이라고 믿어요.</li><li><b>거짓말!</b>: 사실이 아니라고 의심해요.</li><li><b>몰래 보고 넘기기</b>: 카드를 확인한 뒤 아직 안 본 사람에게 새로 말하며 넘겨요.</li><li>모두가 본 마지막 사람은 넘길 수 없고 반드시 정해야 해요.</li></ul>
+  <h3>결과</h3><p>판단이 틀린 쪽이 그 카드를 자기 앞에 공개하고 가져가요. 가져간 사람이 다음 차례예요.</p>
+  <div class="modal-actions"><button class="btn primary" data-a="close">닫기</button></div></div></div>`;
+  if(S&&S.phase==="over"){
+    const P=S.players,host=S.host===S.me,lose=S.over.loser===S.me;
+    h+=`<div class="overlay"><div class="modal"><div class="result-head"><div style="font-size:48px">${lose?"😵":"🎉"}</div><div class="kind">${lose?"당신이 졌어요":esc(S.over.lname)+" 패배!"}</div><p>${esc(S.over.why)}</p></div>
+    ${P.map((p,i)=>`<div class="res-row ${i===S.over.loser?"lose":""}"><div class="res-top"><span class="nm">${esc(p.name)}${i===S.me?" (나)":""}</span>${i===S.over.loser?'<span class="chip off" style="background:var(--danger)">패배</span>':""}</div>${zoo(p.table)}</div>`).join("")}
+    <div class="modal-actions">${host?`<button class="btn primary big" data-a="start">다시 하기</button>`:`<span class="hint">방장이 다시 시작하기를 기다리는 중…</span>`}<button class="btn" data-a="leave">나가기</button></div></div></div>`;
+  }
+  $("mr").innerHTML=h;
+}
+function render(){
+  if(!S)return;
+  $("home").hidden=true;$("game").hidden=false;
+  const P=S.players,c=S.chain,me=S.me,ph=S.phase,host=S.host===me;
+  const k=[ph,S.cur,c&&c.to,c&&c.claim,S.log.length].join("|");if(k!==key){key=k;sel={neg:0}}
+  $("rc").textContent=S.code;
+  if(lastTop!==undefined&&S.log[0]&&S.log[0]!==lastTop&&ph!=="lobby")toast(S.log[0]);
+  lastTop=S.log[0];
+  if(ph==="lobby"){
+    $("app").innerHTML=`<div class="center-wrap"><div class="card-panel"><div class="room-code"><div class="sub" style="margin:0">방 코드</div><div class="big">${S.code}</div></div>
+    <ul class="members">${P.map((p,i)=>`<li><span class="nm">${p.bot?"":"👤 "}${esc(p.name)}</span>${i===S.host?'<span class="chip gold">방장</span>':""}${i===me?'<span class="chip ok">나</span>':""}${p.bot?'<span class="chip">봇</span>':""}${host&&p.bot?`<button class="btn small" data-a="rm" data-v="${i}" aria-label="봇 제거">✕</button>`:""}</li>`).join("")}</ul>
+    <div class="row"><button class="btn" data-a="copy">🔗 초대 링크 복사</button>${host?`<button class="btn" data-a="addBot" ${P.length>=6?"disabled":""}>🤖 봇 추가</button>`:""}</div>
+    ${host?`<button class="btn primary big" data-a="start" style="width:100%;margin-top:12px" ${P.length<2?"disabled":""}>게임 시작 (${P.length}/6명)</button><p class="hint">2명 이상이면 시작할 수 있어요. 사람이 모자라면 봇을 추가하세요.</p>`:`<p class="hint">방장이 시작하기를 기다리는 중… (${P.length}/6명)</p>`}</div></div>`;
+    modals();return;
+  }
+  const pickable=(ph==="offer"&&S.cur===me)||(ph==="pass"&&c.to===me);
+  const opp=(p,i)=>{
+    const turn=(ph==="offer"&&S.cur===i)||(["respond","pass"].includes(ph)&&c.to===i);
+    const can=pickable&&S.targets.includes(i),seen=c&&["respond","pass"].includes(ph)&&c.seen.includes(i);
+    const backs=Array.from({length:Math.min(p.n,10)},()=>'<div class="card back"></div>').join("");
+    return `<div class="opp ${turn?"turn":""} ${can?"pick":""} ${sel.target===i?"on":""} ${p.off?"off":""}" ${can?`data-a="target" data-v="${i}" role="button"`:""}><div class="opp-name">${esc(p.name)}${p.bot?'<span class="chip">봇</span>':""}${p.off?'<span class="chip off">끊김</span>':""}${seen?'<span class="chip ok">👀</span>':""}</div><div class="opp-cards">${backs}</div><div class="opp-meta">손패 ${p.n}장</div>${zoo(p.table)}</div>`;
+  };
+  let showFace=null,msg="",act="",resCls="";
+  if(c&&ph==="reveal")showFace=c.card;else if(c&&ph==="pass"&&c.to===me)showFace=S.peek;
+  if(ph==="offer"){
+    if(S.cur===me){msg="내 차례예요! 카드를 골라 보내세요";
+      act=`<div class="lab">① 아래 손패에서 카드 선택 ${sel.card!=null?"✔ "+N[sel.card]:""} · ② 위에서 받을 사람 선택 ${sel.target!=null?"✔ "+esc(P[sel.target].name):""}</div>${claimUI()}<button class="btn primary big" data-a="offer" ${sel.card!=null&&sel.target!=null&&sel.ty!=null?"":"disabled"}>건네기</button>`}
+    else msg=`${esc(P[S.cur].name)}님이 카드를 고르는 중…`;
+  }else if(ph==="respond"){
+    if(c.to===me){msg=`${esc(P[c.from].name)}님이 말했어요. 믿을까요?`;
+      act=`${c.canPass?"":`<div class="warnbox">모두가 이 카드를 봤어요. 마지막 사람이라 반드시 정해야 해요!</div>`}<div class="line"><button class="btn primary big" data-a="resp" data-v="true">✅ 맞아</button><button class="btn danger big" data-a="resp" data-v="false">🚫 거짓말!</button></div>${c.canPass?`<button class="btn" data-a="resp" data-v="pass">👀 몰래 보고 다른 사람에게 넘기기</button>`:""}`}
+    else msg=`${esc(P[c.to].name)}님이 판단하는 중…`;
+  }else if(ph==="pass"){
+    if(c.to===me){msg=`카드는 ${E[S.peek]} ${N[S.peek]}! 누구에게 뭐라고 말하며 넘길까요?`;
+      act=`<div class="lab">위에서 받을 사람 선택 ${sel.target!=null?"✔ "+esc(P[sel.target].name):""}</div>${claimUI()}<button class="btn primary big" data-a="pass" ${sel.target!=null&&sel.ty!=null?"":"disabled"}>건네기</button>`}
+    else msg=`${esc(P[c.to].name)}님이 카드를 보고 넘길 사람을 고르는 중…`;
+  }else if(ph==="reveal"){msg=esc(S.result||"");resCls=/정답/.test(S.result||"")?"res-ok":"res-bad"}
+  const trail=c&&ph!=="reveal"?`${esc(P[c.from].name)} → ${esc(P[c.to].name)} · 카드를 본 사람: ${c.seen.map(i=>esc(P[i].name)).join(" → ")}`:(c?`${esc(P[c.from].name)} → ${esc(P[c.to].name)}`:"");
+  const stageCard=c?(showFace!=null?face(showFace,"big flip"):'<div class="card back big"></div>'):'<div class="card back big" style="opacity:.4"></div>';
+  const mp=ph==="offer"&&S.cur===me;
+  const hand=S.hand.map((n,j)=>n?`<button class="card hand ${n>1?"stack":""} ${sel.card===j?"sel":""} ${mp?"":"dis"}" ${mp?`data-a="card" data-v="${j}"`:"disabled"}><span class="c-tl">${N[j]}</span><span class="c-mid">${E[j]}</span>${n>1?`<b class="bd">×${n}</b>`:""}</button>`:"").join("");
+  $("app").innerHTML=`<div class="table"><div class="opps">${P.map((p,i)=>i===me?"":opp(p,i)).join("")}</div>
+  <div class="stage"><div class="trail">${trail}</div>${stageCard}${c?`<div class="bubble"><small>${esc(P[c.from].name)}</small>“${ct(c.claim)}”</div>`:""}<div class="turn-msg ${resCls}">${msg}</div></div>
+  <div class="me"><div class="me-info"><b>${esc(P[me].name)} (나)</b><span class="chip">손패 ${P[me].n}장</span><span class="grow"></span></div>${zoo(P[me].table)}<div class="hand">${hand}</div><div class="actions">${act}</div></div></div>`;
+  modals();
+}
+</script></body></html>
